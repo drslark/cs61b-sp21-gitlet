@@ -10,6 +10,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -59,6 +60,31 @@ class Utils {
             }
             BufferedOutputStream str =
                     new BufferedOutputStream(Files.newOutputStream(file.toPath()));
+            for (Object obj : contents) {
+                if (obj instanceof byte[]) {
+                    str.write((byte[]) obj);
+                } else {
+                    str.write(((String) obj).getBytes(StandardCharsets.UTF_8));
+                }
+            }
+            str.close();
+        } catch (IOException | ClassCastException excp) {
+            throw new IllegalArgumentException(excp.getMessage());
+        }
+    }
+
+    /** Write the result of concatenating the bytes in CONTENTS to FILE,
+     *  OPTIONS can be specified.
+     *  Each object in CONTENTS may be either a String or a byte array.
+     *  Throws IllegalArgumentException in case of problems. */
+    static void writeContents(File file, OpenOption[] options, Object... contents) {
+        try {
+            if (file.isDirectory()) {
+                throw
+                    new IllegalArgumentException("cannot overwrite directory");
+            }
+            BufferedOutputStream str =
+                new BufferedOutputStream(Files.newOutputStream(file.toPath(), options));
             for (Object obj : contents) {
                 if (obj instanceof byte[]) {
                     str.write((byte[]) obj);
